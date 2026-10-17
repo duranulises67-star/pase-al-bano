@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Reglas de seguridad de Pase al Baño.
+// Cópialas completas en Firebase > Firestore Database > Reglas y toca «Publicar».
+// Solo el personal aprobado por dirección puede leer o escribir los datos de su escuela.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function sesion() { return request.auth != null; }
+    function escuela(e) { return get(/databases/$(database)/documents/escuelas/$(e)).data; }
+    function registro(e) { return get(/databases/$(database)/documents/escuelas/$(e)/miembros/$(request.auth.uid)).data; }
+    function miembro(e) {
+      return sesion()
+        && exists(/databases/$(database)/documents/escuelas/$(e)/miembros/$(request.auth.uid))
+        && registro(e).aprobado == true;
+    }
+    function director(e) {
+      return sesion() && (escuela(e).director == request.auth.uid || (miembro(e) && registro(e).rol == 'director'));
+    }
+
+    // A qué escuela pertenece cada cuenta
+    match /usuarios/{uid} {
+      allow read, write: if sesion() && request.auth.uid == uid;
+    }
+
+    // Código de 6 letras para unirse a una escuela
+    match /codigos/{codigo} {
+      allow get: if sesion();
+      allow create: if sesion() && escuela(request.resource.data.escuela).director == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /escuelas/{e} {
+      allow get: if miembro(e) || (sesion() && resource.data.director == request.auth.uid);
+      allow create: if sesion() && request.resource.data.director == request.auth.uid;
+      allow update: if director(e) && request.resource.data.director == resource.data.director;
+      allow delete: if false;
+
+      // Personal: cada maestro se registra como pendiente; dirección aprueba o quita el acceso.
+      match /miembros/{uid} {
+        allow get: if sesion() && (request.auth.uid == uid || miembro(e));
+        allow list: if miembro(e);
+        allow create: if sesion() && request.auth.uid == uid && (
+          (request.resource.data.rol == 'maestro' && request.resource.data.aprobado == false) ||
+          (request.resource.data.rol == 'director' && escuela(e).director == request.auth.uid)
+        );
+        allow update, delete: if director(e);
+      }
+
+      // Datos de la escuela: grupos, registros diarios, alumnos fuera ahora, fotos y vínculos.
+      match /grupos/{id}   { allow read, write: if miembro(e); }
+      match /dias/{id}     { allow read, write: if miembro(e); }
+      match /activos/{id}  { allow read, write: if miembro(e); }
+      match /fotos/{id}    { allow read, write: if miembro(e); }
+      match /vinculos/{id} { allow read, write: if miembro(e); }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Pase al Baño",
+  "short_name": "Pase al Baño",
+  "description": "Registro de salidas al sanitario por alumno, con cronómetro, bitácora diaria y análisis semanal de lunes a viernes.",
+  "lang": "es-MX",
+  "id": "./",
+  "start_url": "./index.html#lista",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EDF1EE",
+  "theme_color": "#1C4A3E",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

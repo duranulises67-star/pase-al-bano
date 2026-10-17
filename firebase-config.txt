@@ -1,0 +1,11 @@
+# CONEXIÓN ENTRE VARIOS EQUIPOS (opcional)
+#
+# Mientras este archivo no tenga datos, la app funciona solo en cada dispositivo.
+#
+# Para conectar las tablets de todos los salones y dirección:
+#   1. Sigue la guía GUIA-FIREBASE.md (unos 15 minutos).
+#   2. En la consola de Firebase, copia el bloque que empieza con  const firebaseConfig = {
+#   3. Pégalo debajo de esta línea, guarda el archivo y vuelve a subir la carpeta.
+#
+# Solo se leen los datos entre llaves { }. Puedes pegar el bloque tal como lo da Firebase.
+
