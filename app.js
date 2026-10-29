@@ -1883,19 +1883,24 @@ async function guardarBorrador() {
 /* ================= Conexión con Firebase ================= */
 async function leerConfigFirebase() {
   if (!/^https?:$/.test(location.protocol)) return null;
+  // Un wifi sin salida a internet deja la petición esperando: se corta a los 5 segundos.
+  const corte = typeof AbortController === 'function' ? new AbortController() : null;
+  const reloj = setTimeout(() => { if (corte) corte.abort(); }, 5000);
   try {
-    const r = await fetch('firebase-config.txt', { cache: 'no-cache' });
+    const r = await fetch('firebase-config.txt', { cache: 'no-cache', signal: corte ? corte.signal : undefined });
     if (!r.ok) return null;
     const txt = (await r.text()).replace(/^\s*(#|\/\/).*$/gm, '');
     const cfg = {};
     txt.replace(/([A-Za-z]+)\s*:\s*["'`]([^"'`]+)["'`]/g, (m, k, v) => { cfg[k] = v.trim(); return m; });
     return cfg.apiKey && cfg.projectId && cfg.appId ? cfg : null;
-  } catch (e) { return null; }
+  } catch (e) { return undefined; }   // no se pudo leer (sin red): no es lo mismo que «sin configurar»
+  finally { clearTimeout(reloj); }
 }
 
 async function iniciarConexion() {
   S.cfg = await leerConfigFirebase();
-  if (!S.cfg) { if (prefs.modoNube) { prefs.modoNube = false; guardarPrefs(); } return false; }
+  if (S.cfg === null && prefs.modoNube) { prefs.modoNube = false; guardarPrefs(); }
+  if (!S.cfg) { S.cfg = null; if (!S.store) conectarStore(S.local); return false; }
   try {
     const mod = await import('./nube.js');
     S.nube = await mod.iniciarNube(S.cfg, { escuelaGuardada: prefs.escuelaId || null, alCambiar: alCambiarNube, alError: errorGuardar });
@@ -2317,12 +2322,13 @@ async function iniciar() {
   S.bloqueado = S.pinActivo && !!aj.bloqueado;
   if (S.bloqueado && S.vista !== 'lista') irA('lista', true);
 
-  const conNube = await iniciarConexion();
-  // Si este equipo ya estaba conectado a la escuela, espera a la nube en lugar de mostrar los datos locales.
-  if (!(conNube && prefs.modoNube) && !S.store) conectarStore(S.local);
-  if (conNube && prefs.modoNube) setTimeout(() => { if (!S.store) conectarStore(S.local); }, 10000);
+  // La app nunca espera a la red para abrir: muestra de inmediato los datos de este equipo.
+  // Solo si este equipo ya estaba conectado a la escuela espera unos segundos a la nube.
+  if (!prefs.modoNube) conectarStore(S.local);
+  else setTimeout(() => { if (!S.store) conectarStore(S.local); }, 6000);
   renderBanner();
   aplicarBloqueo();
+  iniciarConexion();
 
   // Deja listas las bibliotecas del PDF para poder usarlas sin internet después.
   setTimeout(() => { if (/^https?:$/.test(location.protocol)) [JSPDF_URL, AUTOTABLE_URL].forEach(u => fetch(u).catch(() => {})); }, 5000);

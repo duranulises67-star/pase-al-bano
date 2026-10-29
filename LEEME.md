@@ -75,6 +75,6 @@ Sin configurar nada, cada tablet guarda sus propios datos. Para que todas las ta
 
 ## Publicar una versión nueva
 
-Si cambias `index.html`, `app.js` o `nube.js`, abre `sw.js` y cambia `pase-al-bano-v2` por `pase-al-bano-v3` (y así sucesivamente). Luego vuelve a subir la carpeta. Cada dispositivo toma la versión nueva la próxima vez que abra la app con internet; los registros no se pierden.
+Si cambias `index.html`, `app.js` o `nube.js`, abre `sw.js` y cambia el número de `VERSION` (por ejemplo, `pase-al-bano-v3` por `pase-al-bano-v4`). Luego vuelve a subir la carpeta. Cada dispositivo toma la versión nueva la próxima vez que abra la app con internet; los registros no se pierden.
 
 Cambiar solo `firebase-config.txt` no requiere cambiar la versión.
